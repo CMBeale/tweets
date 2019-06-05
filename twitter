@@ -1,0 +1,33 @@
+library(twitteR) 
+
+consumer_key <- ""  ## replace with your keys
+consumer_secret <-""   ## replace with your keys
+access_token <- ""    ## replace with your keys
+access_secret <- ""     ## replace with your keys
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+1
+tw = searchTwitter('#biodiversityrevisited', n = 1000)
+d = twListToDF(tw)
+
+## all tweets:
+HT_agg <- aggregate(rep(1, NROW(d)), 
+                    by = list(time = cut(d$created, breaks = 
+                                           seq(from = min(d$created), to = Sys.time(), 
+                                               by = as.difftime(c("0:0:0", "06:00:00"))[2]))),
+                    sum)
+
+HT_agg$time <- as.POSIXct(as.character(HT_agg$time),format="%Y-%m-%d %H:%M:%S")
+
+## new tweets:
+HT_agg_new <- aggregate(rep(1, sum(!d$isRetweet)), 
+                    by = list(time = cut(d$created[!d$isRetweet], breaks = 
+                                           seq(from = min(d$created), to = Sys.time(), 
+                                               by = as.difftime(c("0:0:0", "06:00:00"))[2]))),
+                    sum)
+
+HT_agg_new$time <- as.POSIXct(as.character(HT_agg_new$time),format="%Y-%m-%d %H:%M:%S")
+
+## 
+plot(HT_agg[,1], HT_agg[,2], type = "l", xlab = "Date", ylab = "Number of tweets", lwd = 2)
+lines(HT_agg_new[,1], HT_agg_new[,2], col = "red", lwd = 2)
+legend("topright", legend = c("All tweets", "New Tweets"), col = c("black", "red"), lwd = 2, lty = 1)
